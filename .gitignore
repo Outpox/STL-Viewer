@@ -1,0 +1,5 @@
+config/local*
+node_modules
+dist
+tmp/*
+!tmp/.gitkeep

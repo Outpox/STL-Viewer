@@ -1,0 +1,7 @@
+{
+  "token": "",
+  "historyLimit": 50,
+  "temporaryFolder": "tmp",
+  "validFormat": [".stl"],
+  "allowedOrigins": ["https://cdn.discordapp.com"]
+}
