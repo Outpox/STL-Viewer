@@ -4,6 +4,7 @@ import { createWriteStream, writeFileSync, unlink } from 'fs';
 import { URL } from 'url';
 import https from 'https';
 import config from 'config';
+import os from 'os';
 
 const TMP: string = config.get('temporaryFolder');
 const VALID_FORMAT: string[] = config.get('validFormat');
@@ -91,7 +92,7 @@ function stlToPng(filePath: string): string {
   createScadFile(filePath);
 
   try {
-    execFileSync('utils/OpenSCAD-2019.05-x86_64.AppImage', ['-o', picturePath, '--autocenter', '--viewall', scadPath]);
+    execFileSync(getOpenSCADPath(), ['-o', picturePath, '--autocenter', '--viewall', '--quiet', scadPath]);
   } catch (err) {
     console.error(err)
     throw new ParserError(ParseError.CONVERT_ERROR, 'An unknown error occured while generating the preview.')
@@ -104,6 +105,20 @@ function createScadFile(file: string) {
   const fileNameExt = basename(file);
   const content = `import("${fileNameExt}");`;
   writeFileSync(`tmp/${fileName}.scad`, content);
+}
+
+function getOpenSCADPath(): string {
+  const path: string = config.get('openSCADPath');
+  if (path !== 'auto') return path;
+
+  switch (os.platform()) {
+    case 'win32': 
+      return join('utils', 'OpenSCAD-2019.05-x86_64.exe');
+
+    case 'linux':
+    default:
+      return join('utils', 'OpenSCAD-2019.05-x86_64.AppImage');
+  }
 }
 
 export enum ParseError {

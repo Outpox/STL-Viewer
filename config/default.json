@@ -3,5 +3,6 @@
   "historyLimit": 50,
   "temporaryFolder": "tmp",
   "validFormat": [".stl"],
-  "allowedOrigins": ["https://cdn.discordapp.com"]
+  "allowedOrigins": ["https://cdn.discordapp.com"],
+  "openSCADPath": "auto"
 }

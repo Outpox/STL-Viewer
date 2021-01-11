@@ -32,7 +32,10 @@ The default configuration can be found in `config/default.json`.
   "validFormat": [".stl"],
 
   // Allowed domains to download the files from. Uploaded files are hosted on `https://cdn.discordapp.com`.
-  "allowedOrigins": ["https://cdn.discordapp.com"]
+  "allowedOrigins": ["https://cdn.discordapp.com"],
+
+  // Path to the openSCAD binary, `auto` will use included binaries (in `./utils`) depending on the operating system.
+  "openSCADPath": "auto"
 }
 ```
 
