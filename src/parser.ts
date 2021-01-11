@@ -13,17 +13,17 @@ const ALLOWED_ORIGINS: string[] = config.get('allowedOrigins');
 export function parseLink(link: string): Promise<string> {
   return new Promise((resolve, reject) => {
     let url: URL;
-    let fileName: string;
+    let baseName: string;
 
     try {
       const result = validateLink(link);
       url = result.url;
-      fileName = result.fileName;
+      baseName = result.baseName;
     } catch (err) {
       return reject(err);
     }
 
-    const filePath = join(TMP, fileName);
+    const filePath = join(TMP, baseName);
     const file = createWriteStream(filePath);
     const request = https.get(url, response => {
       if (response.statusCode === 200) {
@@ -59,12 +59,12 @@ export function parseLink(link: string): Promise<string> {
 }
 
 export async function clear(picturePath: string) {
-  const extensionsToDelete = ['.stl', '.scad', '.png'];
-  const fileName = picturePath.split('/').reverse()[0];
-  const baseName = basename(fileName, extname(fileName));
+  const extensionsToDelete = ['.scad', '.png'].concat(config.get('validFormat'));
+  const baseName = basename(picturePath);
+  const fileName = basename(baseName, extname(baseName));
 
   extensionsToDelete.forEach(ext => {
-    unlink(join(TMP, baseName + ext), err => {
+    unlink(join(TMP, fileName + ext), err => {
       if (err) console.error(err);
     });
   });
@@ -72,17 +72,17 @@ export async function clear(picturePath: string) {
 
 export function validateLink(link: string) {
   const url = new URL(link);
-  const fileName = url.pathname.split('/').reverse()[0];
+  const baseName = basename(url.pathname);
 
   if (!ALLOWED_ORIGINS.includes(url.origin)) {
-    throw (new ParserError(ParseError.FORBIDDEN_DOMAIN, `Domain \`${url.origin}\` not allowed.`));
+    throw (new ParserError(ParseError.FORBIDDEN_DOMAIN, `Domain \`${url.origin}\` is not allowed.`));
   }
 
-  if (!VALID_FORMAT.includes(extname(fileName))) {
-    throw (new ParserError(ParseError.INVALID_FORMAT, `File type \`${extname(fileName)}\` not allowed.`));
+  if (!VALID_FORMAT.includes(extname(baseName))) {
+    throw (new ParserError(ParseError.INVALID_FORMAT, `File type \`${extname(baseName)}\` is not allowed.`));
   }
 
-  return { url, fileName }
+  return { url, baseName }
 }
 
 function stlToPng(filePath: string): string {
@@ -102,8 +102,8 @@ function stlToPng(filePath: string): string {
 
 function createScadFile(file: string) {
   const fileName = basename(file, extname(file));
-  const fileNameExt = basename(file);
-  const content = `import("${fileNameExt}");`;
+  const baseName = basename(file);
+  const content = `import("${baseName}");`;
   writeFileSync(`tmp/${fileName}.scad`, content);
 }
 
