@@ -58,6 +58,9 @@ export class Command {
     console.log()
     // Stop execution if the message comes from a bot or if the channel is not allowed or if the input is not matched.
     if (context.author.bot === true || !this._validateChannelType(context.channel) || !this._matchInput(context.content)) {
+      if (context.author.bot !== true && !this._validateChannelType(context.channel) && context.channel instanceof Discord.DMChannel) {
+        context.reply('Sorry daddy said not to speak with strangers...');
+      }
       return
     }
 
