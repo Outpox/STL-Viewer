@@ -1,6 +1,7 @@
 import { Message, Client, MessageEmbed } from "discord.js";
 import { parseLink, ParserError, validateLink, clear } from './parser';
 import config from 'config';
+import path from 'path';
 
 const HISTORY_LIMIT: number = config.get('historyLimit');
 
@@ -25,7 +26,8 @@ export async function handleQuery(ctx: Message, client: Client, args?: Map<strin
             .then(async picturePath => {
               await ctx.channel.send(
                 new MessageEmbed()
-                  .setDescription(`${attachmentObject.name} shared by ${firsMessageWithAttachment.member?.displayName}`)
+                  .setTitle(attachmentObject.name)
+                  .setDescription(`Shared by ${firsMessageWithAttachment.member?.displayName}`)
                   .attachFiles([picturePath]));
               clear(picturePath);
             })
@@ -39,7 +41,10 @@ export async function handleQuery(ctx: Message, client: Client, args?: Map<strin
   } else {
     parseLink(link)
       .then(async picturePath => {
-        await ctx.channel.send(new MessageEmbed().attachFiles([picturePath]));
+        await ctx.channel.send(
+          new MessageEmbed()
+            .setTitle(path.basename(link))
+            .attachFiles([picturePath]));
         clear(picturePath);
       })
       .catch(async (err: ParserError) => {
