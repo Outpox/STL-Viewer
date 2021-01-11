@@ -15,7 +15,6 @@ export async function handleQuery(ctx: Message, client: Client, args?: Map<strin
           try {
             validateLink(message.attachments.first()!.attachment.toString());
           } catch (err) {
-            console.log(err);
             return false;
           }
           return true;
