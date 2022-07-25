@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@scalenc/stl-to-png": "^1.0.3",
     "config": "^3.3.3",
     "discord.js": "^12.5.1",
     "typescript": "^3.9.7"
