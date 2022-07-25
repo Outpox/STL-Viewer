@@ -1,16 +1,15 @@
-import { execFileSync } from 'child_process';
 import { basename, extname, join } from 'path';
-import { createWriteStream, writeFileSync, unlink } from 'fs';
+import { unlink } from 'fs';
 import { URL } from 'url';
 import https from 'https';
 import config from 'config';
-import os from 'os';
+import { makeAmbientLight, makeDirectionalLight, makeStandardMaterial, stl2png } from '@scalenc/stl-to-png';
 
 const TMP: string = config.get('temporaryFolder');
 const VALID_FORMAT: string[] = config.get('validFormat');
 const ALLOWED_ORIGINS: string[] = config.get('allowedOrigins');
 
-export function parseLink(link: string): Promise<string> {
+export function parseLink(link: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     let url: URL;
     let baseName: string;
@@ -23,14 +22,22 @@ export function parseLink(link: string): Promise<string> {
       return reject(err);
     }
 
-    const filePath = join(TMP, baseName);
-    const file = createWriteStream(filePath);
     const request = https.get(url, response => {
       if (response.statusCode === 200) {
-        response.pipe(file);
+        const tmpBuffer: any = [];
+        response.on("error", err => reject(`error converting stream - ${err}`));
+        response.on('data', chunk => tmpBuffer.push(chunk));
+        response.on('end', () => {
+          return resolve(stl2png(Buffer.concat(tmpBuffer), {
+            height: 500,
+            width: 500,
+            cameraPosition: [95, 75, 162],
+            lights: [makeAmbientLight(0xffffff), makeDirectionalLight(1, 1, 1, 0xffffff, 1.35), makeDirectionalLight(0.5, 1, -1, 0xffffff, 1)],
+            materials: [makeStandardMaterial(1, 0xfad82c)],
+            edgeMaterials: [makeStandardMaterial(0.7, 0x000000)]
+          }))
+        });
       } else {
-        file.close();
-        unlink(filePath, () => { });
         console.error(`Response status: ${response.statusCode}.`)
         return reject(new ParserError(ParseError.DOWNLOAD_ERROR, 'An error occured while downloading the file.'));
       }
@@ -39,21 +46,6 @@ export function parseLink(link: string): Promise<string> {
     request.on('error', err => {
       console.error(err);
       return reject(new ParserError(ParseError.DOWNLOAD_ERROR, 'An error occured while downloading the file.'));
-    })
-
-    file.on('error', err => {
-      file.close();
-      unlink(filePath, () => { });
-      console.error(err);
-      return reject(new ParserError(ParseError.DOWNLOAD_ERROR, 'An error occured while downloading the file.'));
-    })
-
-    file.on('finish', () => {
-      try {
-        return resolve(stlToPng(filePath));
-      } catch (err) {
-        return reject(err);
-      }
     })
   })
 }
@@ -83,42 +75,6 @@ export function validateLink(link: string) {
   }
 
   return { url, baseName }
-}
-
-function stlToPng(filePath: string): string {
-  const fileName = basename(filePath, extname(filePath));
-  const picturePath = join(TMP, `${fileName}.png`);
-  const scadPath = join(TMP, `${fileName}.scad`)
-  createScadFile(filePath);
-
-  try {
-    execFileSync(getOpenSCADPath(), ['-o', picturePath, '--autocenter', '--viewall', '--quiet', scadPath]);
-  } catch (err) {
-    console.error(err)
-    throw new ParserError(ParseError.CONVERT_ERROR, 'An unknown error occured while generating the preview.')
-  }
-  return picturePath;
-}
-
-function createScadFile(file: string) {
-  const fileName = basename(file, extname(file));
-  const baseName = basename(file);
-  const content = `import("${baseName}");`;
-  writeFileSync(`tmp/${fileName}.scad`, content);
-}
-
-function getOpenSCADPath(): string {
-  const path: string = config.get('openSCADPath');
-  if (path !== 'auto') return path;
-
-  switch (os.platform()) {
-    case 'win32': 
-      return join('utils', 'OpenSCAD-2019.05-x86_64.exe');
-
-    case 'linux':
-    default:
-      return join('utils', 'OpenSCAD-2019.05-x86_64.AppImage');
-  }
 }
 
 export enum ParseError {

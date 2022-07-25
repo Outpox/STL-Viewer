@@ -28,8 +28,8 @@ export async function handleQuery(ctx: Message, client: Client, args?: Map<strin
                 new MessageEmbed()
                   .setTitle(attachmentObject.name)
                   .setDescription(`Shared by ${firsMessageWithAttachment.member?.displayName}`)
-                  .attachFiles([picturePath]));
-              clear(picturePath);
+                  .attachFiles([{attachment: picturePath}]));
+              // clear(picturePath);
             })
             .catch(async (err: ParserError) => {
               await ctx.channel.send(err.message);
@@ -44,8 +44,8 @@ export async function handleQuery(ctx: Message, client: Client, args?: Map<strin
         await ctx.channel.send(
           new MessageEmbed()
             .setTitle(path.basename(link))
-            .attachFiles([picturePath]));
-        clear(picturePath);
+            .attachFiles([{attachment: picturePath}]));
+        // clear(picturePath);
       })
       .catch(async (err: ParserError) => {
         await ctx.channel.send(err.message);
